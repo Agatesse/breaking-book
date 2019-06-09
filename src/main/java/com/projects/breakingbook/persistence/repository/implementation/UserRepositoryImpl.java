@@ -20,18 +20,19 @@ import java.util.stream.Collectors;
 public class UserRepositoryImpl implements UserRepository {
 
     private final JdbcTemplate jdbcTemplate;
-    private final String INSERT = "INSERT INTO breaking_book_user(breaking_book_user_username, breaking_book_user_avatar, breaking_book_user_email, breaking_book_user_password, breaking_book_user_role) VALUES (?, ?, ?, ?, ?)";
-    private final String SELECT_ALL = "SELECT * FROM breaking_book_user";
-    private final String SELECT_BY_ID = "SELECT * FROM breaking_book_user WHERE breaking_book_user_id = ?";
-    private final String DELETE_BY_ID = "DELETE FROM breaking_book_user WHERE breaking_book_user_id = ?";
-    private final String DELETE_ALL = "DELETE FROM breaking_book_user";
-    private final String UPDATE = "UPDATE breaking_book_user SET breaking_book_user_username = ?, breaking_book_user_avatar = ?, breaking_book_user_email = ?, breaking_book_user_password = ? WHERE breaking_book_user_id = ?";
 
-    private final String SELECT_JOIN = "SELECT * FROM breaking_book_user " +
+    private static final String INSERT = "INSERT INTO breaking_book_user(breaking_book_user_username, breaking_book_user_avatar, breaking_book_user_email, breaking_book_user_password, breaking_book_user_role) VALUES (?, ?, ?, ?, ?)";
+    private static final String SELECT_ALL = "SELECT * FROM breaking_book_user";
+    private static final String SELECT_BY_ID = "SELECT * FROM breaking_book_user WHERE breaking_book_user_id = ?";
+    private static final String DELETE_BY_ID = "DELETE FROM breaking_book_user WHERE breaking_book_user_id = ?";
+    private static final String DELETE_ALL = "DELETE FROM breaking_book_user";
+    private static final String UPDATE = "UPDATE breaking_book_user SET breaking_book_user_username = ?, breaking_book_user_avatar = ?, breaking_book_user_email = ?, breaking_book_user_password = ? WHERE breaking_book_user_id = ?";
+
+    private static final String SELECT_JOIN = "SELECT * FROM breaking_book_user " +
             "LEFT JOIN book ON book.book_breaking_book_user = breaking_book_user.breaking_book_user_id " +
             "LEFT JOIN friend ON book.book_friend = friend.friend_id;";
 
-    private final String SELECT_JOIN_BY_ID = "SELECT * FROM breaking_book_user " +
+    private static final String SELECT_JOIN_BY_ID = "SELECT * FROM breaking_book_user " +
             "LEFT JOIN book ON book.book_breaking_book_user = breaking_book_user.breaking_book_user_id " +
             "LEFT JOIN friend ON book.book_friend = friend.friend_id " +
             "WHERE breaking_book_user.breaking_book_user_id = ?;";
@@ -42,8 +43,8 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public List<User> findAllUsers() {
-        final List<User> users = this.jdbcTemplate.query(this.SELECT_ALL, new UserMapper());
-        final Map<Long, List<Book>> booksMap = this.jdbcTemplate.query(this.SELECT_JOIN, new UserMapExtractor());
+        final List<User> users = this.jdbcTemplate.query(SELECT_ALL, new UserMapper());
+        final Map<Long, List<Book>> booksMap = this.jdbcTemplate.query(SELECT_JOIN, new UserMapExtractor());
         if (booksMap != null) {
             for (final User user : users) {
                 user.setBooks(booksMap.get(user.getId()));
@@ -54,7 +55,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public boolean createUser(final User user) {
-        final int result = this.jdbcTemplate.update(this.INSERT, user.getUsername(), user.getAvatar(), user.getEmail(), user.getPassword(), user.getRole().getRoleNameString());
+        final int result = this.jdbcTemplate.update(INSERT, user.getUsername(), user.getAvatar(), user.getEmail(), user.getPassword(), user.getRole().getRoleNameString());
         return result != 0;
     }
 
@@ -68,8 +69,8 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public Optional<User> findUserById(final Long id) {
         try {
-            final User user = this.jdbcTemplate.queryForObject(this.SELECT_BY_ID, new Object[]{id}, new UserMapper());
-            final Map<Long, List<Book>> booksMap = this.jdbcTemplate.query(this.SELECT_JOIN_BY_ID, new Object[]{id}, new UserMapExtractor());
+            final User user = this.jdbcTemplate.queryForObject(SELECT_BY_ID, new Object[]{id}, new UserMapper());
+            final Map<Long, List<Book>> booksMap = this.jdbcTemplate.query(SELECT_JOIN_BY_ID, new Object[]{id}, new UserMapExtractor());
             user.setBooks(booksMap.get(user.getId()));
             return Optional.of(user);
         } catch (final EmptyResultDataAccessException e) {
@@ -79,19 +80,19 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public boolean deleteUserById(final Long id) {
-        final int result = this.jdbcTemplate.update(this.DELETE_BY_ID, id);
+        final int result = this.jdbcTemplate.update(DELETE_BY_ID, id);
         return result != 0;
     }
 
     @Override
     public boolean deleteAllUsers() {
-        final int result = this.jdbcTemplate.update(this.DELETE_ALL);
+        final int result = this.jdbcTemplate.update(DELETE_ALL);
         return result != 0;
     }
 
     @Override
     public boolean updateUser(final Long id, final User user) {
-        final int result = this.jdbcTemplate.update(this.UPDATE, user.getUsername(), user.getAvatar(), user.getEmail(), user.getPassword(), id);
+        final int result = this.jdbcTemplate.update(UPDATE, user.getUsername(), user.getAvatar(), user.getEmail(), user.getPassword(), id);
         return result != 0;
     }
 
@@ -100,7 +101,7 @@ public class UserRepositoryImpl implements UserRepository {
         final List<User> users = this.findAllUsers().stream()
                 .filter(user -> user.getUsername().trim().toLowerCase().contains(username.trim().toLowerCase()))
                 .collect(Collectors.toList());
-        return users.size() != 0;
+        return !users.isEmpty();
     }
 
     @Override
@@ -108,6 +109,6 @@ public class UserRepositoryImpl implements UserRepository {
         final List<User> users = this.findAllUsers().stream()
                 .filter(user -> user.getEmail().trim().toLowerCase().contains(email.trim().toLowerCase()))
                 .collect(Collectors.toList());
-        return users.size() != 0;
+        return !users.isEmpty();
     }
 }
