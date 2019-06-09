@@ -1,7 +1,6 @@
 package com.projects.breakingbook.persistence.entity.mapper;
 
 import com.projects.breakingbook.persistence.entity.*;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
 
 import java.sql.ResultSet;
@@ -10,7 +9,7 @@ import java.util.*;
 
 public class FriendMapExtractor implements ResultSetExtractor<Map<Long, List<Book>>> {
     @Override
-    public Map<Long, List<Book>> extractData(ResultSet resultSet) throws SQLException, DataAccessException {
+    public Map<Long, List<Book>> extractData(ResultSet resultSet) throws SQLException {
         Map<Long, List<Book>> booksMap = new HashMap<>();
         while (resultSet.next()) {
             Long friendId = resultSet.getLong("friend_id");
