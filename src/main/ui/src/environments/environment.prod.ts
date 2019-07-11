@@ -6,4 +6,6 @@ export const environment = {
 
 export const GOOGLE_API_KEY = LOCAL_GOOGLE_API_KEY;
 
-export const BASE_URL_API = '/api';
+/*export const BASE_URL_API = '/api';*/
+
+export const BASE_URL_API = 'https://breakingbook.herokuapp.com/api';

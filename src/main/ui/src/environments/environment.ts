@@ -10,8 +10,9 @@ export const environment = {
 
 export const GOOGLE_API_KEY = LOCAL_GOOGLE_API_KEY;
 
-export const BASE_URL_API = 'http://localhost:8080/api';
+// export const BASE_URL_API = 'http://localhost:8080/api';
 
+export const BASE_URL_API = 'https://breakingbook.herokuapp.com/api';
 /*
  * For easier debugging in development mode, you can import the following file
  * to ignore zone related error stack frames such as `zone.run`, `zoneDelegate.invokeTask`.
