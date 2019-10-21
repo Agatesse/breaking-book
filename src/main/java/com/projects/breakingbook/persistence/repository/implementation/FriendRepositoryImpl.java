@@ -51,7 +51,6 @@ public class FriendRepositoryImpl implements FriendRepository {
             .append("DELETE FROM friend ")
             .append("WHERE friend_id = ?")
             .toString();
-    private static final String DELETE_ALL = "DELETE FROM friend";
     private static final String UPDATE = new StringBuilder()
             .append("UPDATE friend ")
             .append("SET friend_name = ?, friend_avatar = ?, friend_breaking_book_user = ? ")
@@ -84,7 +83,7 @@ public class FriendRepositoryImpl implements FriendRepository {
             .append("INNER JOIN breaking_book_user r ON book.book_breaking_book_user = r.breaking_book_user_id ")
             .append("WHERE friend.friend_id = ?;")
             .toString();
-    private static final String SELECT_BOOK_BY_FRIEND_ID = "SELECT book_id FROM book WHERE book_friend = ?";
+    private static final String SELECT_BOOK_BY_FRIEND_ID = "SELECT book_id FROM book WHERE book_friend = ?;";
     private static final String INSERT_BOOK_TO_HISTORY = new StringBuilder()
             .append("INSERT INTO book_friend")
             .append("(book_friend_book_id, book_friend_friend_id) ")
@@ -147,21 +146,15 @@ public class FriendRepositoryImpl implements FriendRepository {
     }
 
     @Override
-    public boolean deleteAllFriends() {
-        final int result = this.jdbcTemplate.update(DELETE_ALL);
-        return result != 0;
-    }
-
-    @Override
     public boolean updateFriend(final Long id, final Friend friend) {
         final int result = this.jdbcTemplate.update(UPDATE, friend.getName(), friend.getAvatar(), friend.getUser().getId(), id);
         return result != 0;
     }
 
     @Override
-    public Long getBorrowedBook(final Long friendId) {
+    public List<Long> getBorrowedBook(final Long friendId) {
         try {
-            return this.jdbcTemplate.queryForObject(SELECT_BOOK_BY_FRIEND_ID, new Object[]{friendId}, Long.class);
+            return this.jdbcTemplate.query(SELECT_BOOK_BY_FRIEND_ID, new Object[]{friendId}, (resultSet, i) -> resultSet.getLong("book_id"));
         } catch (final EmptyResultDataAccessException e) {
             LOGGER.error("Cannot get borrowed books", e);
             return null;
