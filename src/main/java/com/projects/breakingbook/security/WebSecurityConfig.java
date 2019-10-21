@@ -24,7 +24,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 )
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
-    UserDetailsServiceImpl userDetailsService;
+    private UserDetailsServiceImpl userDetailsService;
 
     @Autowired
     private JwtAuthEntryPoint unauthorizedHandler;
@@ -54,10 +54,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(final HttpSecurity http) throws Exception {
-        http.cors().and().csrf().disable().
-                authorizeRequests()
-                .antMatchers("**", "/api/auth/**").permitAll()
-                .antMatchers("/api/**").denyAll()
+        http.cors().and().csrf().disable()
+                .authorizeRequests()
+                .antMatchers("/api/users/**",
+                        "/api/books/**",
+                        "/api/friends/**",
+                        "/api/collections/**",
+                        "/api/wishlists/**",
+                        "/api/key/**").authenticated()
+                .antMatchers("**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .exceptionHandling().authenticationEntryPoint(this.unauthorizedHandler).and()

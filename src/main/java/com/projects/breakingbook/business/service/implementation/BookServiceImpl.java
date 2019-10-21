@@ -2,6 +2,7 @@ package com.projects.breakingbook.business.service.implementation;
 
 import com.projects.breakingbook.business.entity.Book;
 import com.projects.breakingbook.business.service.BookService;
+import com.projects.breakingbook.business.service.utils.ServiceUtils;
 import com.projects.breakingbook.persistence.repository.BookRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +31,7 @@ public class BookServiceImpl implements BookService {
         return this.bookRepository
                 .findAllBooks(userId)
                 .stream()
-                .filter(book -> book.getFriend().getId() != null && book.getFriend().getId() != 0)
+                .filter(book -> book.getFriend() != null && book.getFriend().getId() != 0)
                 .collect(Collectors.toList());
     }
 
@@ -47,63 +48,20 @@ public class BookServiceImpl implements BookService {
     @Override
     public boolean update(final Long id, final Book book) {
         final Optional<Book> optionalBook = this.bookRepository.findBookById(id);
-        Book originalBook = null;
-        if (optionalBook.isPresent()) {
-            originalBook = optionalBook.get();
-        }
         book.setId(id);
-        if (book.getTitle() == null) {
-            book.setTitle(originalBook.getTitle());
+        Book originalBook = null;
+        Book updatedBook = null;
+        if (!optionalBook.isPresent()) {
+            return false;
         }
-        if (book.getAuthors() == null) {
-            book.setAuthors(originalBook.getAuthors());
-        }
-        if (book.getIsbn() == null) {
-            book.setIsbn(originalBook.getIsbn());
-        }
-        if (book.getImage() == null) {
-            book.setImage(originalBook.getImage());
-        }
-        if (book.getLanguage() == null) {
-            book.setLanguage(originalBook.getLanguage());
-        }
-        if (book.getPublisher() == null) {
-            book.setPublisher(originalBook.getPublisher());
-        }
-        if (book.getDatePublished() == null) {
-            book.setDatePublished(originalBook.getDatePublished());
-        }
-        if (book.getPages() == 0) {
-            book.setPages(originalBook.getPages());
-        }
-        if (book.getSynopsis() == null) {
-            book.setSynopsis(originalBook.getSynopsis());
-        }
-        if (book.getUser() == null) {
-            book.setUser(originalBook.getUser());
-        }
-        if (book.getFriend() == null) {
-            if (originalBook.getFriend().getId() != 0) {
-                book.setFriend(originalBook.getFriend());
-            }
-        }
-        if (book.getRating() == 0) {
-            book.setRating(originalBook.getRating());
-        }
-        if (book.getComment() == null) {
-            book.setComment(originalBook.getComment());
-        }
-        return this.bookRepository.updateBook(id, book);
+        originalBook = optionalBook.get();
+        updatedBook = ServiceUtils.generateBooksAttributes(book, originalBook);
+        return this.bookRepository.updateBook(id, updatedBook);
     }
 
     @Override
     public boolean delete(final Long id) {
         return this.bookRepository.deleteBookById(id);
-    }
-
-    @Override
-    public boolean deleteAll() {
-        return this.bookRepository.deleteAllBooks();
     }
 
     @Override

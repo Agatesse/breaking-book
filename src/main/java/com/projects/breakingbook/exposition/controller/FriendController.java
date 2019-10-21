@@ -12,7 +12,16 @@ import com.projects.breakingbook.exposition.exception.FriendNotUpdatedException;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.text.ParseException;
@@ -84,14 +93,14 @@ public class FriendController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable final Long id) {
         final boolean result;
-        final Long bookId = this.friendService.getBorrowedBook(id);
-        if (bookId == null) {
-            result = this.friendService.delete(id);
-        } else {
-            this.bookService.updateFriend(bookId, null);
-            this.bookService.toggleOwned(bookId);
-            result = this.friendService.delete(id);
+        final List<Long> booksIds = this.friendService.getBorrowedBook(id);
+        if (!booksIds.isEmpty()) {
+            booksIds.forEach(bookId -> {
+                this.bookService.updateFriend(bookId, null);
+                this.bookService.toggleOwned(bookId);
+            });
         }
+        result = this.friendService.delete(id);
 
         if (result) {
             return new ResponseEntity<>("friendId deleted successfully", HttpStatus.OK);
@@ -100,29 +109,7 @@ public class FriendController {
         }
     }
 
-    // TODO : delete this, not very useful
-    @DeleteMapping("")
-    public ResponseEntity<?> deleteAll(final Long userId) {
-        Long bookId;
-        final List<Friend> friends = this.friendService.getAll(userId);
-        boolean result;
-        for (final Friend friend : friends) {
-            bookId = this.friendService.getBorrowedBook(friend.getId());
-            if (bookId == null) {
-                result = this.friendService.delete(friend.getId());
-            } else {
-                this.bookService.updateFriend(bookId, null);
-                this.bookService.toggleOwned(bookId);
-                result = this.friendService.delete(friend.getId());
-            }
-            if (!result) {
-                return new ResponseEntity<>("No friendId deleted", HttpStatus.BAD_REQUEST);
-            }
-        }
-        return new ResponseEntity<>("All friends deleted successfully", HttpStatus.OK);
-    }
-
-    private FriendDTO convertToDTO(final Friend friend) {
+    FriendDTO convertToDTO(final Friend friend) {
         final FriendDTO friendDTO = this.modelMapper.map(friend, FriendDTO.class);
         friendDTO.setUserId(friend.getUser().getId());
         if (friend.getHistory() != null) {
@@ -134,7 +121,7 @@ public class FriendController {
         return friendDTO;
     }
 
-    private Friend convertToEntity(final FriendDTO friendDTO) throws ParseException {
+    Friend convertToEntity(final FriendDTO friendDTO) throws ParseException {
         final Friend friend = this.modelMapper.map(friendDTO, Friend.class);
         if (friendDTO.getUserId() != null) {
             final Optional<User> optionalUser = this.userService.getOne(friendDTO.getUserId());
@@ -142,7 +129,7 @@ public class FriendController {
         }
         if (friendDTO.getHistoryBookIds() != null) {
             final List<Book> history = friendDTO.getHistoryBookIds().stream()
-                    .map(id -> this.bookService.getOne(id))
+                    .map(this.bookService::getOne)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toList());

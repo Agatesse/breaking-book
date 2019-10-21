@@ -10,11 +10,20 @@ import com.projects.breakingbook.exposition.DTO.BookDTO;
 import com.projects.breakingbook.exposition.exception.BookNotCreatedException;
 import com.projects.breakingbook.exposition.exception.BookNotUpdatedException;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -66,7 +75,7 @@ public class BookController {
             } else {
                 throw new BookNotCreatedException("Book not created");
             }
-        } catch (final ParseException | BookNotCreatedException e) {
+        } catch (final BookNotCreatedException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
@@ -123,7 +132,7 @@ public class BookController {
             } else {
                 throw new BookNotUpdatedException("Book not updated");
             }
-        } catch (final ParseException | BookNotUpdatedException e) {
+        } catch (final BookNotUpdatedException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
@@ -138,16 +147,6 @@ public class BookController {
         }
     }
 
-    @DeleteMapping("")
-    public ResponseEntity<?> deleteAll() {
-        final boolean result = this.bookService.deleteAll();
-        if (result) {
-            return new ResponseEntity<>("All books deleted successfully", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("No book deleted", HttpStatus.BAD_REQUEST);
-        }
-    }
-
     private BookDTO convertToDTO(final Book book) {
         final BookDTO bookDTO = this.modelMapper.map(book, BookDTO.class);
         bookDTO.setUserId(book.getUser().getId());
@@ -159,7 +158,7 @@ public class BookController {
         return bookDTO;
     }
 
-    private Book convertToEntity(final BookDTO bookDTO) throws ParseException {
+    private Book convertToEntity(final BookDTO bookDTO) {
         final Book book = this.modelMapper.map(bookDTO, Book.class);
         if (bookDTO.getFriendId() != null) {
             final Optional<Friend> optionalFriend = this.friendService.getOne(bookDTO.getFriendId());

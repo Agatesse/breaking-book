@@ -15,6 +15,7 @@ import com.projects.breakingbook.security.jwt.JwtProvider;
 import com.projects.breakingbook.security.services.UserPrinciple;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,10 +24,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
-import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,8 +49,11 @@ public class UserController {
     private final UserService userService;
     private final BookService bookService;
     private final ModelMapper modelMapper;
-    PasswordEncoder encoder;
-    JwtProvider jwtProvider;
+    private final PasswordEncoder encoder;
+    private final JwtProvider jwtProvider;
+
+    @Value("${breaking-book.app.apiKey}")
+    private String apikey;
 
     @Autowired
     public UserController(final AuthenticationManager authenticationManager, final UserService userService, final BookService bookService, final ModelMapper modelMapper, final PasswordEncoder encoder, final JwtProvider jwtProvider) {
@@ -52,6 +63,11 @@ public class UserController {
         this.modelMapper = modelMapper;
         this.encoder = encoder;
         this.jwtProvider = jwtProvider;
+    }
+
+    @GetMapping("auth/key")
+    public String getApi() {
+        return this.apikey;
     }
 
     @PostMapping("/auth/signin")
@@ -130,7 +146,7 @@ public class UserController {
             } else {
                 throw new UserNotUpdatedException("User not updated");
             }
-        } catch (final ParseException | UserNotUpdatedException e) {
+        } catch (final UserNotUpdatedException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
@@ -146,17 +162,6 @@ public class UserController {
         }
     }
 
-    @DeleteMapping("/users")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<?> deleteAll() {
-        final boolean result = this.userService.deleteAll();
-        if (result) {
-            return new ResponseEntity<>("All users deleted successfully", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("No user deleted", HttpStatus.BAD_REQUEST);
-        }
-    }
-
     private UserDTO convertToDTO(final User user) {
         final UserDTO userDTO = this.modelMapper.map(user, UserDTO.class);
         if (user.getBooks() != null) {
@@ -168,11 +173,11 @@ public class UserController {
         return userDTO;
     }
 
-    private User convertToEntity(final UserDTO userDTO) throws ParseException {
+    private User convertToEntity(final UserDTO userDTO) {
         final User user = this.modelMapper.map(userDTO, User.class);
         if (userDTO.getBookIds() != null) {
             final List<Book> books = userDTO.getBookIds().stream()
-                    .map(id -> this.bookService.getOne(id))
+                    .map(this.bookService::getOne)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toList());
